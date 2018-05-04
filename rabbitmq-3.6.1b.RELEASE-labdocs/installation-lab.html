@@ -1,0 +1,629 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="HTML Tidy for Java (vers. 2009-12-01), see jtidy.sourceforge.net" name="generator">
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<title>Chapter&nbsp;2.&nbsp;Installation and Management</title>
+<link href="css/html.css" rel="stylesheet" type="text/css">
+<meta content="DocBook XSL Stylesheets V1.79.1" name="generator">
+<link href="index.html" rel="home" title="RabbitMQ - Lab Documentation">
+<link href="index.html" rel="up" title="RabbitMQ - Lab Documentation">
+<link href="ide-setup.html" rel="prev" title="Chapter&nbsp;1.&nbsp;Setting Up the IDE">
+<link href="java-message-sender-receiver-lab.html" rel="next" title="Chapter&nbsp;3.&nbsp;Java Message Sender and Receiver">
+
+<link href="css/highlight.css" rel="stylesheet" type="text/css"></head>
+<body alink="#0000FF" bgcolor="white" link="#0000FF" text="black" vlink="#840084">
+<div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:none;"><a href="http://www.rabbitmq.com/" shape="rect" style="border:none;" title="RabbitMQ"><img src="images/rabbitmq_logo_strap.png" style="border:none;"></a><a href="http://www.pivotal.io/" shape="rect" style="border:none;" title="RabbitMQ by Pivotal"><img src="images/logo-pivotal-118x25.png" style="border:none;position:absolute;padding-top:5px;right:42px;"></a></div>
+<div class="chapter">
+<div class="titlepage">
+<div>
+<div>
+<h1 class="title"><a id="installation-lab" name="installation-lab" shape="rect"></a>Chapter&nbsp;2.&nbsp;Installation and
+Management</h1>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="installation-lab-objective" name="installation-lab-objective" shape="rect"></a>2.1.&nbsp;Objective</h2>
+</div>
+</div>
+</div>
+<p>In this lab, you will install RabbitMQ server. At the end of
+this lab, you will have a working RabbitMQ installation, with the
+management plugin enabled.</p>
+<p>This lab is divided into 2 parts:</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Install RabbitMQ instance.</p>
+</li>
+<li class="listitem">
+<p>Enable the management console, and use the web user interface to
+configure and monitor the RabbitMQ artifacts, such as exchanges and
+queues.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="installation-lab-installation" name="installation-lab-installation" shape="rect"></a>2.2.&nbsp;Installation</h2>
+</div>
+</div>
+</div>
+<p>Depending on your system, execute the instructions from the
+slides (lesson) to install RabbitMQ. Windows users can use the
+Erlang installer and the RabbitMQ installer provided with the
+training material.</p>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="installation-lab-windows" name="installation-lab-windows" shape="rect"></a>2.2.1.&nbsp;Windows</h3>
+</div>
+</div>
+</div>
+<p>The Windows installer installs RabbitMQ as a service. After the
+installation, the RabbitMQ service will automatically start.</p>
+<p>Execute the following steps to verify whether the RabbitMQ
+service is started:</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Open a command prompt in the <code class="code">RABBITMQ_INSTALL_DIR/rabbitmq_server-xxx/sbin</code>
+directory.</p>
+<div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;">
+<table border="0" summary="Tip">
+<tr>
+<td align="center" colspan="1" rowspan="2" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td>
+<th align="left" colspan="1" rowspan="1">Tip</th>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top">
+<p>If you open up the "RabbitMQ Server" program group on the Start
+menu there is a convenient shortcut for this.</p>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li class="listitem">
+<p>Run the rabbitmqctl.bat status command. You should see the
+status of the RabbitMQ instance as running.</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">&gt;rabbitmqctl.bat status
+Status of node 'rabbit@mybox' ...
+[{pid,3544},
+ {running_applications,[{rabbit,"RabbitMQ","3.6.1"},
+                        {mnesia,"MNESIA  CXC 138 12","4.13.3"},
+                        {xmerl,"XML parser","1.3.10"},
+                        {os_mon,"CPO  CXC 138 46","2.4"},
+                        {rabbit_common,[],"3.6.1"},
+                        {ranch,"Socket acceptor pool for TCP protocols.",
+                               "1.2.1"},
+                        {sasl,"SASL  CXC 138 11","2.7"},
+                        {stdlib,"ERTS  CXC 138 10","2.8"},
+                        {kernel,"ERTS  CXC 138 10","4.2"}]},
+ {os,{win32,nt}},
+ {erlang_version,"Erlang/OTP 18 [erts-7.3] [64-bit] [smp:8:8] [async-threads:30]\n"},
+ {memory,[{total,49057088},
+          {connection_readers,0},
+          {connection_writers,0},
+          {connection_channels,0},
+          {connection_other,0},
+          {queue_procs,2712},
+          {queue_slave_procs,0},
+          {plugins,0},
+          {other_proc,22075608},
+          {mnesia,61480},
+          {mgmt_db,0},
+          {msg_index,41024},
+          {other_ets,927616},
+          {binary,23792},
+          {code,17432179},
+          {atom,662409},
+          {other_system,7830268}]},
+ {alarms,[]},
+ {listeners,[{clustering,25672,"::"},{amqp,5672,"::"},{amqp,5672,"0.0.0.0"}]},
+ {vm_memory_high_watermark,0.4},
+ {vm_memory_limit,6832155852},
+ {disk_free_limit,50000000},
+ {disk_free,183844171776},
+ {file_descriptors,[{total_limit,8092},
+                    {total_used,2},
+                    {sockets_limit,7280},
+                    {sockets_used,0}]},
+ {processes,[{limit,1048576},{used,162}]},
+ {run_queue,0},
+ {uptime,78},
+ {kernel,{net_ticktime,60}}]
+</pre>
+</li>
+</ol>
+</div>
+<div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+<table border="0" summary="Note">
+<tr>
+<td align="center" colspan="1" rowspan="2" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td>
+<th align="left" colspan="1" rowspan="1">Note</th>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top">
+<p>You might encounter a "Failed to create cookie file" error. This
+may be because the HOMEDRIVE environment variable is not correctly
+set. To solve this issue, set the environment variable to the
+appropriate disk drive, where you installed Erlang and the RabbitMQ
+instance. For example, if you installed both the software on 'C'
+drive, specify the following before executing any RabbitMQ
+commands: <code class="code">set HOMEDRIVE=C:</code> - then stop
+and restart the server.</p>
+<p>If it still fails, try copying the Erlang cookie file from <code class="filename">c:\Windows\.erlang.cookie</code> to yourself. For
+example if you are running as Administrator, copy it to <code class="filename">c:\Users\Administrator</code>.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Run the <code class="code">rabbitmq-service stop</code> command.
+The server should confirm it's stopped.</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">rabbitmq-service start</code>
+command. The server confirms it's started:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">C:\&gt; Service RabbitMQ started.
+                                       
+</pre>
+</li>
+</ol>
+</div>
+<div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+<table border="0" summary="Note">
+<tr>
+<td align="center" colspan="1" rowspan="2" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td>
+<th align="left" colspan="1" rowspan="1">Note</th>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top">
+<p>The installer creates shortcuts for all these commands in the
+Start Menu.</p>
+<p>Alternatively you can find the service in the Services panel and
+use the stop and start buttons - just like any other Windows
+service.</p>
+</td>
+</tr>
+</table>
+</div>
+<p>Congratulations, you completed the first part of the lab.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="installation-lab-mac" name="installation-lab-mac" shape="rect"></a>2.2.2.&nbsp;Mac OSX</h3>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h4 class="title"><a id="installation-lab-mac-1" name="installation-lab-mac-1" shape="rect"></a>2.2.2.1.&nbsp;Option 1: Combo
+Installer</h4>
+</div>
+</div>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Download the compressed installation file from: <a class="ulink" href="http://www.rabbitmq.com/install-standalone-mac.html" shape="rect" target="_top">http://www.rabbitmq.com/install-standalone-mac.html</a>.</p>
+</li>
+<li class="listitem">
+<p>Unpack the downloaded file <code class="filename">rabbitmq-server-mac-standalone-xxx.tar.xz</code>
+(where xxx is the current version) by simply double-clicking it.
+Move the unpacked directory <code class="filename">rabbitmq_server-xxx</code> to <code class="filename">/usr/local</code> (you will need to use <code class="literal">sudo</code> to do this).</p>
+</li>
+<li class="listitem">
+<p>Finally add <code class="literal">/usr/local/rabbitmq_server-xxx/sbin</code> to your
+<code class="literal">PATH</code>. To do this, add the
+following</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">PATH=$PATH:/usr/local/sbin
+</pre>
+
+<p>to your <code class="code">.bash_profile</code> or <code class="code">.profile.</code> in your home directory. (Remember:
+replace 'xxx' by the version you downloaded).</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">rabbitmq-server</code> command. The
+server confirms it's started:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmq-server
+
+              RabbitMQ 3.6.5. Copyright (C) 2007-2016 Pivotal Software, Inc.
+  ##  ##      Licensed under the MPL.  See http://www.rabbitmq.com/
+  ##  ##
+  ##########  Logs: /Users/paulchapman/Downloads/rabbitmq_server-3.6.5/var/log/rabbitmq/rabbit@Pauls-Mac-4.log
+  ######  ##        /Users/paulchapman/Downloads/rabbitmq_server-3.6.5/var/log/rabbitmq/rabbit@Pauls-Mac-4-sasl.log
+  ##########
+              Starting broker...
+ completed with 0 plugins.
+                                               
+</pre>
+</li>
+<li class="listitem">The RabbitMQ server is running in foreground
+mode in your current terminal window. You will need a new terminal
+window to continue.</li>
+<li class="listitem">Skip the next section (Using Homebrew) and
+continue from "Checking the Installation".</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h4 class="title"><a id="installation-lab-mac-2" name="installation-lab-mac-2" shape="rect"></a>2.2.2.2.&nbsp;Option 2: Using
+Homebrew</h4>
+</div>
+</div>
+</div>
+<p>It is also possible to install RabbitMQ using the Homebrew - a
+third-party package manager, which installs UNIX tools and other
+software on Mac OSX.</p>
+<p>Before executing the install commands, make sure the CC (C
+compiler) or GCC (GNU Compiler Collection) is installed. This can
+be verified by typing CC or GCC in your terminal. If the execution
+of the command outputs, "c: command not found", then you'll have to
+install the Command Line Tools for Xcode. It's a download that
+includes all of the tools required by Homebrew. The Command Line
+Tools for Xcode can be found in <a class="ulink" href="https://developer.apple.com/downloads/index.action" shape="rect" target="_top">https://developer.apple.com/downloads/index.action</a></p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>To install Homebrew, execute the following command in the
+terminal.</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">/usr/bin/ruby -e "$(/usr/bin/curl -fksSL https://raw.github.com/Homebrew/homebrew/go/install)"
+</pre>
+
+<p>The script installs Homebrew to <code class="code">/usr/local</code> directory.</p>
+</li>
+<li class="listitem">
+<p>To ensure that you have installed Homebrew properly, execute the
+following command</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">brew doctor
+</pre>
+</li>
+<li class="listitem">
+<p>Install RabbitMQ server by executing the following command:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">brew install rabbitmq
+</pre>
+
+<div class="note" style="margin-left: 0.5in; margin-right: 0.5in;">
+<table border="0" summary="Note">
+<tr>
+<td align="center" colspan="1" rowspan="2" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td>
+<th align="left" colspan="1" rowspan="1">Note</th>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top">The RabbitMQ server scripts will be
+installed into <code class="code">/usr/local/sbin</code> but this
+is not automatically added to your path.</td>
+</tr>
+</table>
+</div>
+</li>
+<li class="listitem">
+<p>Finally add <code class="literal">/usr/local/sbin</code> to your
+<code class="literal">PATH</code>. To do this, add the
+following</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">PATH=$PATH:/usr/local/sbin
+</pre>
+
+<p>to <code class="code">.bash_profile</code> or <code class="code">.profile.</code> in your home directory.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h4 class="title"><a id="installation-lab-mac-3" name="installation-lab-mac-3" shape="rect"></a>2.2.2.3.&nbsp;Checking the
+Installation</h4>
+</div>
+</div>
+</div>
+<p>Let's check if the server is properly running.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Run the <code class="code">rabbitmqctl status</code> command.
+You should see RabbitMQ running:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmqctl status
+
+Status of node rabbit@C02GW18DDV16 ...
+[{pid,13252},
+ {running_applications,[{rabbit,"RabbitMQ","2.7.1"},
+                        {mnesia,"MNESIA  CXC 138 12","4.6"},
+                        {os_mon,"CPO  CXC 138 46","2.2.8"},
+                        {sasl,"SASL  CXC 138 11","2.2"},
+                        {stdlib,"ERTS  CXC 138 10","1.18"},
+                        {kernel,"ERTS  CXC 138 10","2.15"}]},
+ {os,{unix,darwin}},
+ {erlang_version,"Erlang R15B (erts-5.9) [source] [64-bit] [smp:4:4] [async-threads:30] [hipe] [kernel-poll:true]\n"},
+ {memory,[{total,26977056},
+          {processes,10248086},
+          {processes_used,10248072},
+          {system,16728970},
+          {atom,504409},
+          {atom_used,475746},
+          {binary,419968},
+          {code,11916223},
+          {ets,906864}]},
+ {vm_memory_high_watermark,0.3999999999174177},
+ {vm_memory_limit,2906192281}]
+...done.
+C02GW18DDV16:~ admin$ rabbitmqctl status 
+Status of node rabbit@C02GW18DDV16 ...
+[{pid,13252},
+ {running_applications,[{rabbit,"RabbitMQ","2.7.1"},
+                        {mnesia,"MNESIA  CXC 138 12","4.6"},
+                        {os_mon,"CPO  CXC 138 46","2.2.8"},
+                        {sasl,"SASL  CXC 138 11","2.2"},
+                        {stdlib,"ERTS  CXC 138 10","1.18"},
+                        {kernel,"ERTS  CXC 138 10","2.15"}]},
+ {os,{unix,darwin}},
+ {erlang_version,"Erlang R15B (erts-5.9) [source] [64-bit] [smp:4:4] [async-threads:30] [hipe] [kernel-poll:true]\n"},
+ {memory,[{total,26949320},
+          {processes,10215822},
+          {processes_used,10215808},
+          {system,16733498},
+          {atom,504409},
+          {atom_used,475775},
+          {binary,421480},
+          {code,11916223},
+          {ets,906856}]},
+ {vm_memory_high_watermark,0.3999999999174177},
+ {vm_memory_limit,2906192281}]
+...done.
+</pre>
+
+<p>Now, let's stop and restart the server.</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">rabbitmqctl stop</code> command. The
+server confirms it's stopped:</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">rabbitmq-server</code> command. The
+server confirms it's started:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmq-server
+
+
+              RabbitMQ 3.6.1. Copyright (C) 2007-2016 Pivotal Software, Inc.
+  ##  ##      Licensed under the MPL.  See http://www.rabbitmq.com/
+  ##  ##
+  ##########  Logs: /var/log/rabbitmq/rabbit@vm-master1.log
+  ######  ##        /var/log/rabbitmq/rabbit@vm-master1-sasl.log
+  ##########
+              Starting broker... completed with 0 plugins.
+</pre>
+</li>
+</ol>
+</div>
+</div>
+<p>Congratulations, you completed the first part of the lab!</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="installation-lab-linux" name="installation-lab-linux" shape="rect"></a>2.2.3.&nbsp;Linux and Unix</h3>
+</div>
+</div>
+</div>
+<p>If you used the package manager to install RabbitMQ, the broker
+should already be running, because it is installed as a
+service.</p>
+<p>If you used the generic UNIX package, you need to start the
+broker with the rabbitmq-server command.</p>
+<p>Execute the following steps to verify whether the RabbitMQ
+service is started:</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Run the <code class="code">rabbitmqctl status</code> command.
+You should see the status as running:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmqctl status
+
+Status of node 'rabbit@vm-master1' ...
+[{pid,14400},
+ {running_applications,[{rabbit,"RabbitMQ","3.6.1"},
+                        {mnesia,"MNESIA  CXC 138 12","4.13.3"},
+                        {os_mon,"CPO  CXC 138 46","2.4"},
+                        {xmerl,"XML parser","1.3.10"},
+                        {rabbit_common,[],"3.6.1"},
+                        {ranch,"Socket acceptor pool for TCP protocols.",
+                               "1.2.1"},
+                        {sasl,"SASL  CXC 138 11","2.7"},
+                        {stdlib,"ERTS  CXC 138 10","2.8"},
+                        {kernel,"ERTS  CXC 138 10","4.2"}]},
+ {os,{unix,linux}},
+ {erlang_version,"Erlang/OTP 18 [erts-7.3] [source-d2a6d81] [64-bit] [async-threads:64] [hipe] [kernel-poll:true]\n"},
+ {memory,[{total,41042560},
+          {connection_readers,0},
+          {connection_writers,0},
+          {connection_channels,0},
+          {connection_other,0},
+          {queue_procs,2680},
+          {queue_slave_procs,0},
+          {plugins,0},
+          {other_proc,18476368},
+          {mnesia,58200},
+          {mgmt_db,0},
+          {msg_index,45248},
+          {other_ets,885096},
+          {binary,18904},
+          {code,17392636},
+          {atom,662409},
+          {other_system,3501019}]},
+ {alarms,[]},
+ {listeners,[{clustering,25672,"::"},{amqp,5672,"::"}]},
+ {vm_memory_high_watermark,0.4},
+ {vm_memory_limit,416628736},
+ {disk_free_limit,50000000},
+ {disk_free,40166559744},
+ {file_descriptors,[{total_limit,924},
+                    {total_used,2},
+                    {sockets_limit,829},
+                    {sockets_used,0}]},
+ {processes,[{limit,1048576},{used,137}]},
+ {run_queue,0},
+ {uptime,1472},
+ {kernel,{net_ticktime,60}}]
+</pre>
+
+<p><code class="literal">Note:</code> Depending on the system, you
+need to execute <code class="code">rabbitmqctl</code> with <code class="code">sudo</code> (for other RabbitMQ commands as well).</p>
+<p>Now, let's stop and restart the server.</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">rabbitmqctl stop</code> command. The
+server confirms it's stopped:</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">rabbitmq-server</code> command. The
+server confirms it's started:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmq-server
+
+              RabbitMQ 3.6.1. Copyright (C) 2007-2016 Pivotal Software, Inc.
+  ##  ##      Licensed under the MPL.  See http://www.rabbitmq.com/
+  ##  ##
+  ##########  Logs: /var/log/rabbitmq/rabbit@vm-master1.log
+  ######  ##        /var/log/rabbitmq/rabbit@vm-master1-sasl.log
+  ##########
+              Starting broker... completed with 0 plugins.
+</pre>
+</li>
+</ol>
+</div>
+</div>
+<p>Congratulations, you completed the first part of the lab!</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="installation-lab-mgmt-plugin" name="installation-lab-mgmt-plugin" shape="rect"></a>2.3.&nbsp;Using the
+Management Plugin</h2>
+</div>
+</div>
+</div>
+<p>In this part, you will use the management plugin to send and
+receive a message.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Enable the management plugin.</p>
+</li>
+<li class="listitem">
+<p>Restart the server.</p>
+</li>
+<li class="listitem">
+<p>Access the web UI from a browser and explore the different
+tabs.</p>
+</li>
+</ol>
+</div>
+<p>Now, what about sending a first message to an exchange and
+consume it from a queue? Perform the following steps to accomplish
+this task:</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Click on the "Queues" tab</p>
+</li>
+<li class="listitem">
+<p>Expand the "Add a new queue" menu</p>
+</li>
+<li class="listitem">
+<p>Add a <code class="code">stock.us</code> queue - you can keep
+default values for properties. With AMQP, messages aren't sent to
+the queues, but sent to the exchanges. The exchanges are bound to
+queues. The next step is to bind an exchange to a queue.</p>
+</li>
+<li class="listitem">
+<p>Click on the "Exchanges" tab</p>
+</li>
+<li class="listitem">
+<p>Select the amq.fanout exchange</p>
+</li>
+<li class="listitem">
+<p>Expand the "Binding" menu</p>
+</li>
+<li class="listitem">
+<p>In the "Add binding" form, enter <code class="code">stock.us</code> and click "Bind". Time now to send the
+message.</p>
+</li>
+<li class="listitem">
+<p>Expand the "Publish message" menu</p>
+</li>
+<li class="listitem">
+<p>Enter a random string in the Routing Key and Payload fields, and
+click Publish Message. You should get a confirmation.</p>
+</li>
+<li class="listitem">
+<p>Now go to the queues tabs and select the queue we created. Note,
+you can check the binding in the "Bindings" menu of the details of
+a queue.</p>
+</li>
+<li class="listitem">
+<p>Expand the "Get messages" menu and click on "Get Messages". Your
+message should appear below.</p>
+</li>
+</ol>
+</div>
+<p><code class="literal">Note:</code> Don't worry if you don't know
+what a fanout is, you'll learn more about the types of exchanges in
+the next module.</p>
+<p>Congratulations, you installed RabbitMQ, its management console,
+and published the first message!</p>
+<p>If you have some time before the instructor moves on to the next
+topic, you can explore the following topics:</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Locate and check the content of configuration files and log
+files (their path is indicated on the slides)</p>
+</li>
+<li class="listitem">
+<p>Check the (?) icons of the menus you used to publish the message
+and bind the exchange to the queue.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table summary="Navigation footer" width="100%">
+<tr>
+<td align="left" colspan="1" rowspan="1" width="40%"><a accesskey="p" href="ide-setup.html" shape="rect">Prev</a>&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><a accesskey="h" href="index.html" shape="rect">Home</a></td>
+<td align="right" colspan="1" rowspan="1" width="40%">&nbsp;<a accesskey="n" href="java-message-sender-receiver-lab.html" shape="rect">Next</a></td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top" width="40%">
+Chapter&nbsp;1.&nbsp;Setting Up the IDE&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><span style="color:white;font-size:90%;"><a href="http://www.pivotal.io/oss" shape="rect" title="RabbitMQ">RabbitMQ By
+Pivotal</a></span></td>
+<td align="right" colspan="1" rowspan="1" valign="top" width="40%">
+&nbsp;Chapter&nbsp;3.&nbsp;Java Message Sender and Receiver</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

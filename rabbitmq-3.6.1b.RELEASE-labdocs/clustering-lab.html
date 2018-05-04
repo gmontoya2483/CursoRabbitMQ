@@ -1,0 +1,357 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="HTML Tidy for Java (vers. 2009-12-01), see jtidy.sourceforge.net" name="generator">
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<title>Chapter&nbsp;6.&nbsp;Clustering</title>
+<link href="css/html.css" rel="stylesheet" type="text/css">
+<meta content="DocBook XSL Stylesheets V1.79.1" name="generator">
+<link href="index.html" rel="home" title="RabbitMQ - Lab Documentation">
+<link href="index.html" rel="up" title="RabbitMQ - Lab Documentation">
+<link href="reliable-message-flow-lab.html" rel="prev" title="Chapter&nbsp;5.&nbsp;Building a Reliable Message Flow">
+<link href="high-availability-lab.html" rel="next" title="Chapter&nbsp;7.&nbsp;High Availability">
+
+<link href="css/highlight.css" rel="stylesheet" type="text/css"></head>
+<body alink="#0000FF" bgcolor="white" link="#0000FF" text="black" vlink="#840084">
+<div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:none;"><a href="http://www.rabbitmq.com/" shape="rect" style="border:none;" title="RabbitMQ"><img src="images/rabbitmq_logo_strap.png" style="border:none;"></a><a href="http://www.pivotal.io/" shape="rect" style="border:none;" title="RabbitMQ by Pivotal"><img src="images/logo-pivotal-118x25.png" style="border:none;position:absolute;padding-top:5px;right:42px;"></a></div>
+<div class="chapter">
+<div class="titlepage">
+<div>
+<div>
+<h1 class="title"><a id="clustering-lab" name="clustering-lab" shape="rect"></a>Chapter&nbsp;6.&nbsp;Clustering</h1>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="clustering-lab-objective" name="clustering-lab-objective" shape="rect"></a>6.1.&nbsp;Objective</h2>
+</div>
+</div>
+</div>
+<p>In this lab, you will set up a 3-node RabbitMQ cluster on your
+local machine. You will also create exchanges, queues, and bindings
+on different nodes of the cluster to see how RabbitMQ replicates
+these declarations on all the nodes in the cluster.</p>
+<p><span class="emphasis"><em>Note to Mac-OS Homebrew
+Users:</em></span> Before starting this lab, disable the STOMP and
+MQTT plugins to avoid port conflicts.</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmq-plugins disable rabbitmq_stomp
+rabbitmq-plugins disable rabbitmq_mqtt
+</pre>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="clustering-lab-preparing-nodes" name="clustering-lab-preparing-nodes" shape="rect"></a>6.2.&nbsp;Preparing the
+Nodes for Clustering</h2>
+</div>
+</div>
+</div>
+<p>You need to set up clean nodes for clustering.</p>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="clustering-lab-preparing-first-node" name="clustering-lab-preparing-first-node" shape="rect"></a>6.2.1.&nbsp;Preparing
+the First Node</h3>
+</div>
+</div>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Start the first node. The command is different depending on your
+operating system.</p>
+<p>For Windows users, you need to set up environment variables in
+dedicated commands and then start the node:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">&gt; set RABBITMQ_NODE_PORT=5672
+&gt; set RABBITMQ_NODENAME=server1
+&gt; set RABBITMQ_SERVER_START_ARGS=-rabbitmq_management listener [{port,15672}]
+&gt; start rabbitmq-server.bat
+</pre>
+
+<p>Make sure to run each command separately (note a command can be
+long and doesn&rsquo;t fit on one line in this document).</p>
+<p>For UNIX-like users, you can start the node in one, long
+command:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ RABBITMQ_NODENAME=server1 RABBITMQ_NODE_PORT=5672
+    RABBITMQ_SERVER_START_ARGS="-rabbitmq_management 
+    listener [{port,15672}]"
+    rabbitmq-server -detached
+</pre>
+
+<p>Again, make sure to launch one command, even if the command
+doesn't fit on one line of this document.</p>
+</li>
+<li class="listitem">
+<p>Check the status of the node:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmqctl &ndash;n server1 status
+</pre>
+
+<p>Now you&rsquo;re sure the node is running, let&rsquo;s clean it
+up.</p>
+</li>
+<li class="listitem">
+<p>Stop and reset the node:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmqctl &ndash;n server1 stop_app
+rabbitmqctl &ndash;n server1 force_reset
+</pre>
+
+<p>Why are you using <code class="code">force_reset</code> instead
+of <code class="code">reset</code>?</p>
+<p>A simple <code class="code">reset</code> could fail if the node
+was already part of a cluster and some nodes of this cluster are
+currently down. <code class="code">force_reset</code> is the
+drastic solution, useful when you want to do some cluster
+experimentation on a clean RabbitMQ instance (you shouldn&rsquo;t
+use <code class="code">force_reset</code> on a production
+environment unless you know exactly what you&rsquo;re doing).</p>
+</li>
+<li class="listitem">
+<p>Restart the application and check the cluster status:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmqctl &ndash;n server1 start_app
+rabbitmqctl &ndash;n server1 cluster_status
+</pre>
+
+<p>You should see something like this:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmqctl -n server1 cluster_status
+Cluster status of node 'server1@mylaptop' ...
+[{nodes,[{disc,['server1@mylaptop ']}]},
+ {running_nodes,['server1@mylaptop ']},
+ {partitions,[]}]
+...done.
+</pre>
+
+<p>The node is single in its cluster. It waits for other nodes to
+join its cluster. You need perform the exact setup with the 2 other
+nodes.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="clustering-lab-preparing-other-nodes" name="clustering-lab-preparing-other-nodes" shape="rect"></a>6.2.2.&nbsp;Preparing
+the Other 2 Nodes</h3>
+</div>
+</div>
+</div>
+<p>Here is a reminder of the commands for the second node.</p>
+<p>To start the second node, for Windows users:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">&gt; set RABBITMQ_NODE_PORT=5673
+&gt; set RABBITMQ_NODENAME=server2
+&gt; set RABBITMQ_SERVER_START_ARGS=-rabbitmq_management 
+    listener [{port,15673}]
+&gt; start rabbitmq-server
+</pre>
+
+<p>To start the second node, for UNIX-like users:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ RABBITMQ_NODENAME=server2 RABBITMQ_NODE_PORT=5673
+    RABBITMQ_SERVER_START_ARGS="-rabbitmq_management 
+    listener [{port,15673}]"
+    rabbitmq-server -detached
+</pre>
+
+<p>Here are the commands to check the second node has started
+correctly and get it ready for clustering:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmqctl -n server2 status
+$ rabbitmqctl -n server2 cluster_status
+$ rabbitmqctl -n server2 stop_app
+</pre>
+
+<p>For server3, make it listen on port <span class="emphasis"><em>5674</em></span>, and make the management
+plugin listen on port <span class="emphasis"><em>15674</em></span>.</p>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="clustering-lab-creating-the-cluster" name="clustering-lab-creating-the-cluster" shape="rect"></a>6.3.&nbsp;Creating
+the Cluster</h2>
+</div>
+</div>
+</div>
+<p>In a production environment, the nodes will be on separate
+machines, and they need to share the same Erlang cookie. As
+you&rsquo;re working on the same machine, you don&rsquo;t need to
+deal with the Erlang cookie. But, even if you&rsquo;re working on a
+local machine, Erlang requires the name of the nodes and the
+hostname (e.g. nodename@hostname).</p>
+<p>To know the hostname of your machine, use the <code class="code">hostname</code> command (works on Linux and
+Windows).</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Make <code class="code">server2</code> join <code class="code">server1</code>&rsquo;s cluster:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmqctl -n server2 join_cluster --ram server1@my-laptop
+</pre>
+
+<p><span class="emphasis"><em>Note: Change "my-laptop" to your
+hostname</em></span></p>
+</li>
+<li class="listitem">
+<p>Start <code class="code">server2</code>'s application.</p>
+</li>
+<li class="listitem">
+<p>Check the cluster status for both server1 and server2</p>
+<p>You should see something like:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">$ rabbitmqctl -n server1 cluster_status
+Cluster status of node 'server1@my-laptop' ...
+[{nodes,[{disc,['server1@my-laptop]},
+         {ram,['server2@my-laptop']}]},
+ {running_nodes,['server2@my-laptop',
+                 'server1@my-laptop']},
+ {partitions,[]}]
+...done.
+$
+</pre>
+
+<p>Note that <code class="code">server1</code> is a disc node, and
+<code class="code">server2</code> joined as RAM node.</p>
+</li>
+<li class="listitem">
+<p>Repeat the above instructions to add <code class="code">server3</code> to the cluster.</p>
+</li>
+</ol>
+</div>
+<p>Now the cluster is up, let&rsquo;s see how it handles the
+declaration of exchanges and queues.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="clustering-lab-declaring-resources" name="clustering-lab-declaring-resources" shape="rect"></a>6.4.&nbsp;Declaring
+Resources on the Cluster</h2>
+</div>
+</div>
+</div>
+<p>You will declare resources (exchanges and queues) on the
+cluster, and check these resources appear on each node.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Connect to <code class="code">server1</code> management plugin
+(<a class="ulink" href="http://localhost:15672/" shape="rect" target="_top">http://localhost:15672/</a>). Note that the cluster
+information is available from a single node (nodes, type of the
+nodes, AMQP port of the nodes, etc.) The management plugin is
+cluster-aware.</p>
+</li>
+<li class="listitem">
+<p>Declare a quotations direct exchange from <code class="code">server1</code>.</p>
+</li>
+<li class="listitem">
+<p>Go to <code class="code">server2</code> and <code class="code">server3</code> management plugin, and check the
+exchange has also been created on those nodes.</p>
+<p>An exchange declaration from one of the node is automatically
+replicated to the other nodes. This means clients can connect to
+any node to send messages to this exchange.</p>
+</li>
+<li class="listitem">
+<p>From <code class="code">server1</code> management plugin,
+declare a <code class="code">market.us</code> queue. Note the UI to
+declare a queue is also cluster-aware: it has a "node" field.
+Choose "server1".</p>
+</li>
+<li class="listitem">
+<p>Check the queue declaration has replicated to <code class="code">server2</code> and <code class="code">server3</code>.</p>
+<p>Remember the defaults for a queue in a cluster. Its metadata are
+available on all the nodes of the cluster, but only one node (<code class="code">server1</code>) actually hosts the queue.</p>
+<p>What about bindings? Are they also replicated?</p>
+</li>
+<li class="listitem">
+<p>Bind the <code class="code">quotations</code> exchange to the
+<code class="code">market.us</code> queue from any node management
+plugin.</p>
+</li>
+<li class="listitem">
+<p>Check if the binding has been replicated to other nodes.</p>
+</li>
+</ol>
+</div>
+<p>Let&rsquo;s see how messages are sent and consumed in a
+cluster.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="clustering-lab-sending-consuming" name="clustering-lab-sending-consuming" shape="rect"></a>6.5.&nbsp;Sending and
+Consuming Messages</h2>
+</div>
+</div>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>From <code class="code">server3</code> management plugin, send a
+message to the <code class="code">quotations</code> exchange.</p>
+</li>
+<li class="listitem">
+<p>Verify that the messages from all the nodes reached the
+queue.</p>
+</li>
+<li class="listitem">
+<p>Consume the message from <code class="code">server2</code>.</p>
+</li>
+</ol>
+</div>
+<p><span class="emphasis"><em>Conclusion:</em></span> Any node can
+be used to send messages to an exchange. The node uses its local
+bindings to know where the message should be routed, and where the
+target queue is (thanks to the cluster metadata). Any node can
+consume messages from a queue, even if the queue isn&rsquo;t
+actually hosted on the node.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="clustering-lab-bonus" name="clustering-lab-bonus" shape="rect"></a>6.6.&nbsp;Bonus</h2>
+</div>
+</div>
+</div>
+<p>If you have some extra time, don&rsquo;t hesitate to experiment
+with RabbitMQ clustering:</p>
+<div class="itemizedlist">
+<ul class="itemizedlist compact" style="list-style-type: disc;">
+<li class="listitem">
+<p>Stop and restart nodes</p>
+</li>
+<li class="listitem">
+<p>Change the type (disk/RAM) of your nodes</p>
+</li>
+<li class="listitem">
+<p>Create multiple clusters on your local system. You created a
+3-node cluster. Now create a 3-node cluster, and a 2-node cluster.
+Switch a node from one cluster to the other.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table summary="Navigation footer" width="100%">
+<tr>
+<td align="left" colspan="1" rowspan="1" width="40%"><a accesskey="p" href="reliable-message-flow-lab.html" shape="rect">Prev</a>&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><a accesskey="h" href="index.html" shape="rect">Home</a></td>
+<td align="right" colspan="1" rowspan="1" width="40%">&nbsp;<a accesskey="n" href="high-availability-lab.html" shape="rect">Next</a></td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top" width="40%">
+Chapter&nbsp;5.&nbsp;Building a Reliable Message Flow&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><span style="color:white;font-size:90%;"><a href="http://www.pivotal.io/oss" shape="rect" title="RabbitMQ">RabbitMQ By
+Pivotal</a></span></td>
+<td align="right" colspan="1" rowspan="1" valign="top" width="40%">
+&nbsp;Chapter&nbsp;7.&nbsp;High Availability</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

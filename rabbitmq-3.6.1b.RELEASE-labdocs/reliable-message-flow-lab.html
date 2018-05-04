@@ -1,0 +1,579 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="HTML Tidy for Java (vers. 2009-12-01), see jtidy.sourceforge.net" name="generator">
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<title>Chapter&nbsp;5.&nbsp;Building a Reliable Message
+Flow</title>
+<link href="css/html.css" rel="stylesheet" type="text/css">
+<meta content="DocBook XSL Stylesheets V1.79.1" name="generator">
+<link href="index.html" rel="home" title="RabbitMQ - Lab Documentation">
+<link href="index.html" rel="up" title="RabbitMQ - Lab Documentation">
+<link href="message-routing-lab.html" rel="prev" title="Chapter&nbsp;4.&nbsp;Using the Full Routing Capabilities of RabbitMQ">
+<link href="clustering-lab.html" rel="next" title="Chapter&nbsp;6.&nbsp;Clustering">
+
+<link href="css/highlight.css" rel="stylesheet" type="text/css"></head>
+<body alink="#0000FF" bgcolor="white" link="#0000FF" text="black" vlink="#840084">
+<div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:none;"><a href="http://www.rabbitmq.com/" shape="rect" style="border:none;" title="RabbitMQ"><img src="images/rabbitmq_logo_strap.png" style="border:none;"></a><a href="http://www.pivotal.io/" shape="rect" style="border:none;" title="RabbitMQ by Pivotal"><img src="images/logo-pivotal-118x25.png" style="border:none;position:absolute;padding-top:5px;right:42px;"></a></div>
+<div class="chapter">
+<div class="titlepage">
+<div>
+<div>
+<h1 class="title"><a id="reliable-message-flow-lab" name="reliable-message-flow-lab" shape="rect"></a>Chapter&nbsp;5.&nbsp;Building
+a Reliable Message Flow</h1>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="reliable-message-flow-lab-objective" name="reliable-message-flow-lab-objective" shape="rect"></a>5.1.&nbsp;Objective</h2>
+</div>
+</div>
+</div>
+<p>In this lab, you will make the message flow reliable by
+implementing message durability, message acknowledgment, and
+transactions.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="reliable-message-flow-lab-persistence-acks-txns" name="reliable-message-flow-lab-persistence-acks-txns" shape="rect"></a>5.2.&nbsp;Durability
+and Persistence, Acknowledgements, and Transactions</h2>
+</div>
+</div>
+</div>
+<p>In this section, you&rsquo;ll configure message persistence, and
+acknowledgement of a message after being consumed.</p>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="reliable-message-flow-lab-durability-persistence" name="reliable-message-flow-lab-durability-persistence" shape="rect"></a>5.2.1.&nbsp;Durability
+and Persistence</h3>
+</div>
+</div>
+</div>
+<p>What happens if your broker crashes? If you&rsquo;re not careful
+enough, you can lose all your settings (e.g. exchanges of some
+specific types). But, even worse, you can lose all the unconsumed
+messages. Let&rsquo;s see what can go wrong, before configuring a
+reliable messaging flow.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Delete any <code class="code">quotations</code> exchange, and
+any <code class="code">quotations</code> queue from the broker.</p>
+</li>
+<li class="listitem">
+<p>Open the <code class="code">QuotationSender</code> class and
+check its content. It sends quotations every one second. Note that
+it creates all the resources it requires (exchange, queue, and
+binding).</p>
+</li>
+<li class="listitem">
+<p>Launch <code class="code">QuotationSender</code>, and let it run
+a little, just enough to see messaging arriving in the quotations
+queue (use the management plugin to check).</p>
+</li>
+<li class="listitem">
+<p>Stop the Java program. Messages stop arriving, but sent messages
+are still in the queue.</p>
+</li>
+<li class="listitem">
+<p>Stop the broker with <code class="code">rabbitmqctl</code>.</p>
+</li>
+<li class="listitem">
+<p>Restart the broker and check if the messages are still in the
+queue.</p>
+<p>There&rsquo;s nothing left: no exchange, no queue, and no
+message. In a real application, you would lose data in case someone
+accidently shut down the broker, or because of a server crash.</p>
+</li>
+<li class="listitem">
+<p>Change <code class="code">QuotationSender</code> to make the
+exchange durable.</p>
+</li>
+<li class="listitem">
+<p>Do the same verification as previously (run the program, check
+messages, stop the program, stop and start the broker, check
+messages). This time, the exchange is still there, but the queue
+and the messages are gone. The reason to make an exchange durable
+is, a client cannot create an exchange with the same name and a
+different type. What you think will happen, if you configured a
+<code class="code">quotations</code> fanout exchange and discover a
+client application created a <code class="code">quotations</code>
+topic exchange after a broker restart? That could be a nasty
+security hole.</p>
+</li>
+<li class="listitem">
+<p>Change <code class="code">QuotationSender</code> to make the
+queue durable.</p>
+</li>
+<li class="listitem">
+<p>Do the same verification as previously. Still no luck for the
+messages. They&rsquo;re gone again. But the exchange and the queue
+survived the restart. You lost data, but making a queue durable
+allows keeping settings and bindings between restarts.</p>
+</li>
+<li class="listitem">
+<p>Change the <code class="code">QuotationSender</code> to make the
+sent messages persistent (use the <code class="code">MessageProperties</code> class if you want a shortcut
+for persistent text messages).</p>
+</li>
+<li class="listitem">
+<p>Do the same verification as done previously. At last, you
+didn&rsquo;t lose the messages.</p>
+</li>
+</ol>
+</div>
+<p>You've now learned what you need to avoid losing data.
+Let&rsquo;s try a couple of other combinations (don&rsquo;t forget
+to delete the exchange and the queue between the tests).</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Exchange isn&rsquo;t durable, queue and messages are persistent
+(you don&rsquo;t lose the messages).</p>
+</li>
+<li class="listitem">
+<p>Exchange is durable and messages are persistent, queue
+isn&rsquo;t durable (you lose the messages).</p>
+</li>
+</ol>
+</div>
+<p>You know by now how to keep your messages and settings between
+restarts or crashes, let&rsquo;s see now how to properly use
+transactions and acknowledgments (note that for simplicity&rsquo;s
+sake, you won&rsquo;t deal with durability and persistence in the
+remaining parts of the lab).</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="reliable-message-flow-lab-transactional-sending" name="reliable-message-flow-lab-transactional-sending" shape="rect"></a>5.2.2.&nbsp;Transactional
+Sending</h3>
+</div>
+</div>
+</div>
+<p>Sometimes messages make a group, they all need to reach the
+broker or none of them should. An example would be the line items
+of a specific order. What you think will happen, if you receive
+only part of your order? And imagine if you were in charge of the
+store, each partial order would certainly imply a manual
+operation.</p>
+<p>Fortunately, RabbitMQ provides transaction semantics when
+sending messages. Let&rsquo;s see what it means.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Open the <code class="code">TransactionalQuotationSender</code>
+class and take a look at its content. It must send atomically 5
+quotations, but half of the time, a poison pill makes one sending
+fail. Note the program purges the queue it sends messages to on
+start.</p>
+</li>
+<li class="listitem">
+<p>Execute the <code class="code">TransactionalQuotationSender</code> several times.
+Each time, check the <code class="code">transactional.quotations</code> queue. There&rsquo;s
+something wrong: when everything goes fine, the queue ends up with
+5 messages, but sometimes, it has only 4 messages! That&rsquo;s
+very bad for our system if you consider there&rsquo;s a business
+rule saying the messages must be sent atomically (remember the
+partial orders!).</p>
+</li>
+</ol>
+</div>
+<p>You need to correct this, but before, let&rsquo;s see the hidden
+advantages of this solution. You send messages outside a
+transaction. As soon as you call <code class="code">basicPublish()</code> method, the message leaves to
+the broker. <code class="code">basicPublish()</code> returns
+immediately, without waiting for any confirmation that the broker
+received the message. You don&rsquo;t know whether the message made
+it to the broker or not. This is known as &ldquo;fire and
+forget&rdquo;. This is fast, but doesn&rsquo;t provide any
+reliability. Use this when you have tons of messages to send and
+you don&rsquo;t care about losing messages (you do care about
+losing line items of an order, but you can live with losing a
+couple of quotations, this is business-specific).</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Modify the <code class="code">TransactionalQuotationSender</code> to make the
+sending of the 5 messages atomic.</p>
+</li>
+<li class="listitem">
+<p>Run the program several times and verify each time there&rsquo;s
+0 or 5 messages on the queue.</p>
+</li>
+</ol>
+</div>
+<p>Transactions are good when you need atomicity, and a guarantee
+that the message made it to the broker. But, remember they impede
+performance.</p>
+<p>It&rsquo;s now time to switch to the reception side.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="reliable-message-flow-lab-reliable-reception-with-acks" name="reliable-message-flow-lab-reliable-reception-with-acks" shape="rect"></a>5.2.3.&nbsp;Reliable
+Reception with Acknowledgments</h3>
+</div>
+</div>
+</div>
+<p>When a consumer acknowledges a message, it tells to the broker
+it&rsquo;s done with the message. When the broker receives the
+acknowledgment, it knows it can definitely remove the message from
+the queue. Let&rsquo;s see what the benefits of acknowledgment
+are.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Open the <code class="code">FairQuotationConsumer</code> class
+and check its content. It consumes messages from the quotations
+queue. Note you simulate a long processing (2 seconds).</p>
+</li>
+<li class="listitem">
+<p>If the <code class="code">quotations</code> queue already
+exists, ensure it's empty (purge it from the management console if
+necessary).</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">FairQuotationConsumer</code> class
+and then the <code class="code">QuotationSender</code>.</p>
+<p>The <code class="code">FairQuotationConsumer</code> outputs
+messages on the console. This consumer is a bottleneck: it takes 2
+seconds to process a message, whereas a new message comes in every
+second.</p>
+</li>
+<li class="listitem">
+<p>Monitor the quotations queue with the management plugin.</p>
+<p>The queue is always empty: as soon as a new message arrives, the
+consumer takes it.</p>
+</li>
+<li class="listitem">
+<p>Stop the sender first, and then stop the consumer.</p>
+</li>
+<li class="listitem">
+<p>Monitor the queue.</p>
+</li>
+</ol>
+</div>
+<p>The queue is empty. Let&rsquo;s do the math: if you let the
+sender run for 60 seconds, it sent 60 messages. As it takes 2
+seconds to the consumer to process a message, it must have
+processed 30 messages. So where are the 30 remaining messages?
+They&rsquo;re gone! Even if they were marked as persistent!</p>
+<p>What happened? The short story is: the client
+&ldquo;swallowed&rdquo; the messages. Here is the complete
+explanation. As soon as a new message arrives in the queue, the
+broker distributes it to the consumer. The consumer uses auto-ack:
+when it receives a new message, it acknowledges it, and then
+processes it. So the message is removed from the queue before it
+has been processed.</p>
+<p>A channel uses one thread for its consumers. So the processing
+is single-threaded, but it doesn&rsquo;t prevent the channel from
+receiving messages. Messages are queued on the client side. This
+kind of queue isn&rsquo;t persistent at all, messages are kept in
+memory. If the client is shut down, the queued messages on the
+client side disappear!</p>
+<p>This is all auto-ack&rsquo;s fault! Always remember that
+auto-ack can lead to lost messages.</p>
+<p>Let&rsquo;s make this more reliable.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Change <code class="code">FairQuotationConsumer</code> to use
+acknowledgments.</p>
+</li>
+<li class="listitem">
+<p>Purge the <code class="code">quotations</code> queue from the
+management console.</p>
+</li>
+<li class="listitem">
+<p>Start the consumer and the sender.</p>
+</li>
+<li class="listitem">
+<p>Monitor the <code class="code">quotations</code> queue. You
+should see it contains un-acked messages.</p>
+</li>
+<li class="listitem">
+<p>Stop the sender first, and then stop the consumer.</p>
+</li>
+<li class="listitem">
+<p>Monitor the queue.</p>
+</li>
+</ol>
+</div>
+<p>You should see that the un-acked messages go back to the queue
+when the consumer is shut down. Thanks to acknowledgment, you no
+longer lose messages if the consumer is too slow to process message
+and crashes.</p>
+<p>But is it good to send messages to the consumer as soon as they
+arrive on the queue? It doesn&rsquo;t process them right away, as
+it&rsquo;s already busy processing one message. This means the
+consumer accumulates un-acked messages, and this can saturate its
+memory.</p>
+<p>Fortunately, there&rsquo;s a way to tell the broker not to send
+another messages before the consumer has acknowledged the previous
+ones. This is known as fair dispatch. Thanks to fair dispatch,
+messages can remain safely on the broker side and don&rsquo;t
+accumulate on the consumer side.</p>
+<p>You can achieve this thanks to the <code class="code">Channel.basicQos(int)</code> method, where the integer
+parameter is the maximum number of messages.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Modify <code class="code">FairQuotationConsumer</code> to use
+fair dispatch (1 message at a time).</p>
+</li>
+<li class="listitem">
+<p>Purge the <code class="code">quotations</code> queue from the
+management console.</p>
+</li>
+<li class="listitem">
+<p>Start the consumer and the sender.</p>
+</li>
+<li class="listitem">
+<p>Monitor the queue. You should see messages accumulating and that
+there&rsquo;s only one un-acked message at a time.</p>
+</li>
+</ol>
+</div>
+<p>If you don&rsquo;t want to see messages accumulating in the
+broker queue, just start another <code class="code">FairQuotationConsumer</code> process. The broker will
+distribute the messages to both consumers and messages will be
+processed as they arrive on the queue.</p>
+<p>Congrats, you&rsquo;re done with the first part of this lab!</p>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="reliable-message-flow-lab-best-effort" name="reliable-message-flow-lab-best-effort" shape="rect"></a>5.3.&nbsp;Multiple
+Transactional Resources and Best Effort</h2>
+</div>
+</div>
+</div>
+<p>In this second part, you&rsquo;ll see what can go wrong when the
+processing of messages implies a transactional resource, like a
+database.</p>
+<p>The system consists of:</p>
+<div class="itemizedlist">
+<ul class="itemizedlist compact" style="list-style-type: disc;">
+<li class="listitem">
+<p>A message sender, <code class="code">DatabaseQuotationSender</code>, that sends quotations
+it also inserts into its own database. By inserting the quotations
+into the sender database, you&rsquo;ll be able to know exactly what
+the sender has sent.</p>
+</li>
+<li class="listitem">
+<p>A message consumer, <code class="code">DatabaseQuotationLogger</code>, that listens to
+messages and records them into its own database.</p>
+</li>
+<li class="listitem">
+<p>A Java server, <code class="code">StartServers</code>, that runs
+a Java-based database server and a Java-based HTTP server. This
+server provides us with a web page that allows comparing the sender
+and consumer databases.</p>
+</li>
+</ul>
+</div>
+<p>Don&rsquo;t worry, you don&rsquo;t have to write these classes,
+you&rsquo;ll only have to tweak them. The point of this part is to
+simulate errors on the consumer side, see the consequences, and use
+the appropriate options to prevent bad consequences.</p>
+<p>First, you&rsquo;ll check if everything works fine.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Start the <code class="code">StartServers</code>, <code class="code">DatabaseQuotationLogger</code>, and <code class="code">DatabaseQuotationSender</code> in this specific
+order.</p>
+</li>
+<li class="listitem">
+<p>Go to <a class="ulink" href="http://localhost:8085/summary" shape="rect" target="_top">http://localhost:8085/summary</a>. You should see a
+web page, with two parts: on the left the sender information, and
+on the right side, the consumer information. As you haven&rsquo;t
+introduced errors yet, information is exactly the same: same number
+of quotations, same chart.</p>
+</li>
+</ol>
+</div>
+<p>You can refresh the web page to see the evolution of the
+quotations. Time now to simulate the errors.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Stop the 3 programs.</p>
+</li>
+<li class="listitem">
+<p>In DatabaseQuotationLogger, change the code in the Consumer to
+the following:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">Quotation quotation = Quotation.read(new String(body));
+if(Math.random() &lt; 0.20) {
+  System.out.println("something went wrong, no recording");
+} else {
+  JdbcUtils.insertQuotationIntoDb(dbConn, quotation);
+}
+</pre>
+</li>
+<li class="listitem">
+<p>Start the <code class="code">StartServers</code>, <code class="code">DatabaseQuotationLogger</code>, and <code class="code">DatabaseQuotationSender</code> in this specific
+order.</p>
+</li>
+<li class="listitem">
+<p>Go to <a class="ulink" href="http://localhost:8085/summary" shape="rect" target="_top">http://localhost:8085/summary</a>. 20% of the
+messages aren&rsquo;t recorded by the consumer. You should see
+random &ldquo;holes&rdquo; in the sender chart.</p>
+</li>
+</ol>
+</div>
+<p>The consumer is using auto-ack. If its processing fails,
+messages are definitely lost. Losing messages isn&rsquo;t always
+problematic: in our case, people are usually interested in the last
+value of a quotation. Our main problem is our chart doesn&rsquo;t
+look nice! But imagine messages were money transfers, it would be
+problematic to lose them.</p>
+<p>The solution is to use acknowledgments.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Stop the 3 programs.</p>
+</li>
+<li class="listitem">
+<p>Modify DatabaseQuotationLogger to acknowledge messages once
+they&rsquo;ve been processed, like the following:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">channel.basicConsume(
+    CONSUMER_QUEUE, false,new DefaultConsumer(channel) {
+  @Override
+  public void handleDelivery(String consumerTag, Envelope envelope,
+         BasicProperties properties, byte[] body) throws IOException {
+    Quotation quotation = Quotation.read(new String(body));
+    if(Math.random() &lt; 0.20) {
+      System.out.println("something went wrong, no recording");
+    } else {
+      JdbcUtils.insertQuotationIntoDb(dbConn, quotation);
+      channel.basicAck(envelope.getDeliveryTag(),false);
+    }
+  }
+});
+</pre>
+</li>
+<li class="listitem">
+<p>Start the <code class="code">StartServers</code>, <code class="code">DatabaseQuotationLogger</code>, and <code class="code">DatabaseQuotationSender</code> in this specific
+order.</p>
+</li>
+<li class="listitem">
+<p>Go to <a class="ulink" href="http://localhost:8085/summary" shape="rect" target="_top">http://localhost:8085/summary</a>. You should see the
+consumer still misses messages. The messages are not lost, but they
+can&rsquo;t be redelivered by the broker.</p>
+</li>
+<li class="listitem">
+<p>Stop the <code class="code">DatabaseQuotationSender</code>, and
+the <code class="code">DatabaseQuotationLogger</code>.</p>
+</li>
+<li class="listitem">
+<p>Monitor the queue with the management plugin. Messages are still
+in the queue.</p>
+</li>
+<li class="listitem">
+<p>Start the <code class="code">DatabaseQuotationLogger</code>
+again. It will dequeue the messages again, use the web page to
+check. As the consumer still fails for 20% of the messages,
+you&rsquo;ll need perhaps to stop and relaunch the consumer several
+times, before the consumer has the same number of quotations as the
+sender. You don&rsquo;t lose messages any more, but something else
+can go wrong. What if the network fails after the processing, but
+before the acknowledgment? Let&rsquo;s find out.</p>
+</li>
+<li class="listitem">
+<p>Make sure the 3 programs are stopped.</p>
+</li>
+<li class="listitem">
+<p>Modify the consumer as follows:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">channel.basicConsume(CONSUMER_QUEUE, false,
+                                 new DefaultConsumer(channel) {
+ @Override
+ public void handleDelivery(String consumerTag,Envelope envelope,
+                         BasicProperties properties, byte[] body) 
+                                             throws IOException {
+      Quotation quotation = Quotation.read(new String(body));
+      JdbcUtils.insertQuotationIntoDb(dbConn, quotation);
+      if(Math.random() &lt; 0.20) {
+          System.out.println("something went wrong, no ack");          
+      } else {
+          channel.basicAck(envelope.getDeliveryTag(),false);
+      }      
+   }
+});
+</pre>
+</li>
+<li class="listitem">
+<p>Start the <code class="code">StartServers</code>, <code class="code">DatabaseQuotationLogger</code>, and <code class="code">DatabaseQuotationSender</code> in this specific
+order.</p>
+</li>
+<li class="listitem">
+<p>Go to <a class="ulink" href="http://localhost:8085/summary" shape="rect" target="_top">http://localhost:8085/summary</a>. This time, all the
+quotations appear in the consumer summary. But the console should
+tell you sometimes an acknowledgement wasn&rsquo;t sent (it
+typically simulates a network failure).</p>
+</li>
+<li class="listitem">
+<p>Stop the <code class="code">DatabaseQuotationSender</code>, and
+the <code class="code">DatabaseQuotationLogger</code>.</p>
+</li>
+<li class="listitem">
+<p>Monitor the queue with the management plugin. Messages are still
+in the queue.</p>
+</li>
+<li class="listitem">
+<p>Start the <code class="code">DatabaseQuotationLogger</code>
+again. It will dequeue the messages again, use the web page to
+check. Note the consumer has more quotations than the sender.</p>
+</li>
+</ol>
+</div>
+<p>The case is quite interesting. You processed the same messages
+multiple times, as you have more messages in the consumer database
+than in the sender database. But the chart is the same (once all
+the messages have been dequeued). Inserting in the database
+isn&rsquo;t an idempotent operation (issuing the same insert
+multiple times doesn&rsquo;t lead to the same result as one single
+insert). The creation process of the chart is idempotent (adding
+the same (x,y) coordinates several times doesn&rsquo;t modify the
+rendering of the chart).</p>
+<p>When acknowledging messages just after the processing,
+there&rsquo;s still a small window for failure (just after the
+processing and before the ack). The window is very small but it
+does exist. So, you must be sure that the processing is idempotent.
+You could make our database inserts idempotent: you&rsquo;d need to
+check if there&rsquo;s already a quotation for the given stock at
+the given time and insert the quotation accordingly.</p>
+<p>Congrats, you&rsquo;ve made it to the end of this lab.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table summary="Navigation footer" width="100%">
+<tr>
+<td align="left" colspan="1" rowspan="1" width="40%"><a accesskey="p" href="message-routing-lab.html" shape="rect">Prev</a>&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><a accesskey="h" href="index.html" shape="rect">Home</a></td>
+<td align="right" colspan="1" rowspan="1" width="40%">&nbsp;<a accesskey="n" href="clustering-lab.html" shape="rect">Next</a></td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top" width="40%">
+Chapter&nbsp;4.&nbsp;Using the Full Routing Capabilities of
+RabbitMQ&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><span style="color:white;font-size:90%;"><a href="http://www.pivotal.io/oss" shape="rect" title="RabbitMQ">RabbitMQ By
+Pivotal</a></span></td>
+<td align="right" colspan="1" rowspan="1" valign="top" width="40%">
+&nbsp;Chapter&nbsp;6.&nbsp;Clustering</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

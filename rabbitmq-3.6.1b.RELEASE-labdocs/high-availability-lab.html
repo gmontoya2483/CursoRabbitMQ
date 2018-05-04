@@ -1,0 +1,622 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="HTML Tidy for Java (vers. 2009-12-01), see jtidy.sourceforge.net" name="generator">
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<title>Chapter&nbsp;7.&nbsp;High Availability</title>
+<link href="css/html.css" rel="stylesheet" type="text/css">
+<meta content="DocBook XSL Stylesheets V1.79.1" name="generator">
+<link href="index.html" rel="home" title="RabbitMQ - Lab Documentation">
+<link href="index.html" rel="up" title="RabbitMQ - Lab Documentation">
+<link href="clustering-lab.html" rel="prev" title="Chapter&nbsp;6.&nbsp;Clustering">
+<link href="performance-lab.html" rel="next" title="Chapter&nbsp;8.&nbsp;Performance">
+
+<link href="css/highlight.css" rel="stylesheet" type="text/css"></head>
+<body alink="#0000FF" bgcolor="white" link="#0000FF" text="black" vlink="#840084">
+<div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:none;"><a href="http://www.rabbitmq.com/" shape="rect" style="border:none;" title="RabbitMQ"><img src="images/rabbitmq_logo_strap.png" style="border:none;"></a><a href="http://www.pivotal.io/" shape="rect" style="border:none;" title="RabbitMQ by Pivotal"><img src="images/logo-pivotal-118x25.png" style="border:none;position:absolute;padding-top:5px;right:42px;"></a></div>
+<div class="chapter">
+<div class="titlepage">
+<div>
+<div>
+<h1 class="title"><a id="high-availability-lab" name="high-availability-lab" shape="rect"></a>Chapter&nbsp;7.&nbsp;High
+Availability</h1>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="high-availability-lab-objective" name="high-availability-lab-objective" shape="rect"></a>7.1.&nbsp;Objective</h2>
+</div>
+</div>
+</div>
+<p>In this lab, you will configure RabbitMQ clusters for high
+availability.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="high-availability-lab-cleaning-cluster" name="high-availability-lab-cleaning-cluster" shape="rect"></a>7.2.&nbsp;Cleaning
+up the Cluster</h2>
+</div>
+</div>
+</div>
+<p>You require a 3-node cluster for performing this lab. You should
+use the cluster reset procedure of the previous lab, if you have
+experimented a lot with your cluster.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="high-availability-lab-queue-failover" name="high-availability-lab-queue-failover" shape="rect"></a>7.3.&nbsp;Failover
+of a Durable, Non-mirrored Queue</h2>
+</div>
+</div>
+</div>
+<p>The objective is to see the limitations of a normal queue in a
+cluster.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Create a <code class="code">quotations</code> fanout exchange,
+and a <code class="code">market.us</code> durable, non-mirrored
+queue on <code class="code">server2</code>. Bind them together.</p>
+</li>
+<li class="listitem">
+<p>Simulate <code class="code">server3</code> going down by
+executing the following command:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmqctl &ndash;n server3 stop_app
+</pre>
+
+<p>You can check the status of the cluster from <code class="code">server1</code> or <code class="code">server2</code>
+management plugin. You see <code class="code">server3</code> in
+red.</p>
+</li>
+<li class="listitem">
+<p>Ensure the <code class="code">market.us</code> queue still
+appears on <code class="code">server1</code> and <code class="code">server2</code>. It means the sent messages can still
+be routed to the <code class="code">market.us</code> queue, and
+consumers can pull messages from the <code class="code">market.us</code> queue.</p>
+</li>
+<li class="listitem">
+<p>Bring up <code class="code">server3</code> again:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmqctl -n server3 start_app
+</pre>
+</li>
+<li class="listitem">
+<p>Ensure that <code class="code">server3</code> is part of the
+cluster again.</p>
+</li>
+</ol>
+</div>
+<p><span class="emphasis"><em>Conclusion:</em></span> If a
+non-owner node of a queue goes down, the cluster works the same way
+regarding that queue. Connected clients connect to another node, or
+wait until the node comes up again, to access the queue.</p>
+<p>Let&rsquo;s see what happens if <code class="code">server2</code> is shut down (<code class="code">server2</code> is the owner of the <code class="code">market.us</code> queue).</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Shut down server2:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">rabbitmqctl &ndash;n server2 stop_app
+</pre>
+</li>
+<li class="listitem">
+<p>Check the status of the cluster, server2 should appear as
+down.</p>
+</li>
+<li class="listitem">
+<p>Check the <code class="code">market.us</code> queue on the
+management console. It appears as down.</p>
+</li>
+</ol>
+</div>
+<p>The <code class="code">market.us</code> queue disappeared with
+its owner node. Try to reconnect to another node, and declare the
+queue.</p>
+<p>Connect to <code class="code">server1</code> management plugin
+and try to declare a durable, non-mirrored <code class="code">market.us</code> queue. You encounter an error.</p>
+<p>You cannot re-declare a durable, non-mirrored queue if its
+owning node is down. This has profound implications on the clients.
+Consumers need to wait until the owning node comes up again, before
+they can consume messages. Publishers must be able to resend their
+messages to the queue.</p>
+<p>Imagine a publishing online store application that sends order
+messages. The messages are consumed by the inventory system. The
+online store application has a &ldquo;confirmed&rdquo; flag on
+orders, and could resend unconfirmed orders every hour. How is the
+confirmed flag set to true? The inventory system publishes a
+message when it processes an order. The online store application
+consumes the message and set the confirmed flag of the
+corresponding order to true. The inventory system can also produce
+a CSV file with all the processed orders, and the online store
+application could read the CSV file to confirm its orders. This
+type of &ldquo;business acknowledgment&rdquo; is very common in
+messaging systems.</p>
+<p>Bring back up <code class="code">server2</code>. It should
+reappear in the cluster.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="high-availability-lab-mirrored-queue-failover" name="high-availability-lab-mirrored-queue-failover" shape="rect"></a>7.4.&nbsp;Failover
+of a Mirrored Queue</h2>
+</div>
+</div>
+</div>
+<p>A mirrored queue is replicated to all nodes in the cluster.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Declare an appropriate policy to make the <code class="code">market.us</code> queue mirrored on all nodes.</p>
+</li>
+<li class="listitem">
+<p>Check the <code class="code">market.us</code> queue became a
+mirrored queue and the <code class="code">quotations</code>
+exchange is still bound to the queue.</p>
+</li>
+<li class="listitem">
+<p>Send a message to the <code class="code">quotations</code>
+exchange.</p>
+</li>
+<li class="listitem">
+<p>Ensure the message is on the queue.</p>
+</li>
+<li class="listitem">
+<p>Stop <code class="code">server2</code>. Verify from the other
+nodes that the queue still appears in the cluster. A mirrored queue
+still exists in the cluster even if its master fails.</p>
+</li>
+<li class="listitem">
+<p>Send some messages that will be routed to the queue, and check
+if they appear in the queue.</p>
+</li>
+<li class="listitem">
+<p>Bring back up <code class="code">server2</code>.</p>
+</li>
+<li class="listitem">
+<p>Check the queue status. The management plugin display that one
+of the slaves (<code class="code">server2</code>) isn&rsquo;t
+synchronized. Remember that, by default, a node doesn&rsquo;t
+synchronize when it joins the cluster (or restarts in the cluster
+like <code class="code">server2</code>).</p>
+</li>
+<li class="listitem">
+<p>Launch the <code class="code">QuotationSender</code> class. It
+connects to <code class="code">server3</code> and sends a message
+every second.</p>
+</li>
+<li class="listitem">
+<p>Check the messages on the market.us queue, and <code class="code">server2</code> is still not synchronized. The only way
+to synchronize <code class="code">server2</code> is to consume
+messages.</p>
+</li>
+<li class="listitem">
+<p>Launch the <code class="code">QuotationConsumer</code> class. It
+consumes messages from the <code class="code">market.us</code>
+queue. All the slaves should naturally get synchronized.</p>
+</li>
+</ol>
+</div>
+<p>This part showed a mirrored queue is highly available. A node
+can fail (even the master node) but the queue is still
+accessible.</p>
+<p><span class="emphasis"><em>Bonus:</em></span> If you want to
+focus on mirrored queues and/or have time, you can try out the
+slave synchronization features (automatic and manual), as shown in
+the slides.</p>
+<p>Let&rsquo;s see now how to handle failover from the client
+side.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="high-availability-lab-publisher-failover" name="high-availability-lab-publisher-failover" shape="rect"></a>7.5.&nbsp;Failover
+for a Publisher</h2>
+</div>
+</div>
+</div>
+<p>In this part, you&rsquo;ll see how a client that publishes
+messages to a server can handle the server's failure.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Delete the <code class="code">market.us</code> queue and the HA
+policy. Re-declare a durable, non-mirrored <code class="code">market.us</code> queue. Choose <code class="code">server2</code> as the owner of the queue.</p>
+</li>
+<li class="listitem">
+<p>Bind the <code class="code">quotations</code> exchange to the
+<code class="code">market.us</code> queue.</p>
+</li>
+<li class="listitem">
+<p>Launch the <code class="code">HaQuotationSender</code> class. It
+connects to <code class="code">server2</code>, and sends messages
+to the <code class="code">quotations</code> exchange.</p>
+</li>
+<li class="listitem">
+<p>Check whether the messages are routed to the queue.</p>
+</li>
+<li class="listitem">
+<p>Stop <code class="code">server2</code>. What happens to the Java
+program? The sender crashes because there&rsquo;s nothing in the
+code to handle a failure of the node it is connected to.</p>
+</li>
+<li class="listitem">
+<p>Make sure the <code class="code">HaQuotationSender</code>
+program isn't running.</p>
+</li>
+<li class="listitem">
+<p>Surround the sending (<code class="code">basicPublish</code>
+method) with a try/catch block to handle the re-connection:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">try {
+  channel.basicPublish("quotations", "",
+     null,quotation.getBytes()
+  );
+} catch (Exception e) {
+  channel = connect();
+}
+</pre>
+</li>
+<li class="listitem">
+<p>Restart <code class="code">server2</code>.</p>
+</li>
+<li class="listitem">
+<p>Start <code class="code">HaQuotationSender</code> class, and
+verify that the messages are routed to the queue.</p>
+</li>
+<li class="listitem">
+<p>Stop <code class="code">server2</code>. <code class="code">HaQuotationSender</code> doesn&rsquo;t crash. It tries
+to reconnect to <code class="code">server2</code>.</p>
+</li>
+<li class="listitem">
+<p>Restart <code class="code">server2</code>. HaQuotationSender
+reconnects and starts sending messages again.</p>
+</li>
+</ol>
+</div>
+<p>The client survives the crash of the node it is connected to.
+You can make the sender even more robust by making it choose
+randomly another node of the cluster (you just have to switch the
+ports for your local cluster). This couples the client to the
+nodes, but it could be easily externalized in a real-world
+application. You can also set up a load balancer in front of the
+nodes.</p>
+<p>Let&rsquo;s see now failover handling for a consumer.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="high-availability-lab-consumer-failover" name="high-availability-lab-consumer-failover" shape="rect"></a>7.6.&nbsp;Failover
+for a Consumer</h2>
+</div>
+</div>
+</div>
+<p>In this part you&rsquo;ll explore two failure scenarios an
+asynchronous consumer can face. For each scenario, you&rsquo;ll
+need a sender, such as the <code class="code">HaQuotationSender</code> class, that publishes to
+<code class="code">server1</code> (port 5672). Make sure to modify
+your sender accordingly, or to use the <code class="code">HaQuotationSender</code> class in the <code class="code">ha-solution</code> project.</p>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="high-availability-lab-resources-sender-setup" name="high-availability-lab-resources-sender-setup" shape="rect"></a>7.6.1.&nbsp;Setting
+up the Resources and the Sender</h3>
+</div>
+</div>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Make sure your cluster has a <code class="code">quotations</code> fanout exchange.</p>
+</li>
+<li class="listitem">
+<p>Make sure your cluster has a non-mirrored, durable <code class="code">market.us</code> queue, with <code class="code">server2</code> as the owner node.</p>
+</li>
+<li class="listitem">
+<p>Make sure the queue is bound to the exchange.</p>
+</li>
+<li class="listitem">
+<p>Launch your quotation sender, and check the messages on the
+queue.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="high-availability-lab-resources-non-owner-node-failure" name="high-availability-lab-resources-non-owner-node-failure" shape="rect"></a>7.6.2.&nbsp;Failure
+of a Non-owner Node</h3>
+</div>
+</div>
+</div>
+<p>The first failure scenario:</p>
+<p>A consumer consumes messages from a queue. The node that the
+consumer is connected to does not own the queue. What happens if
+this node crashes?</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Launch <code class="code">HaQuotationConsumer</code>. It
+consumes messages from <code class="code">server3</code>. Each time
+it gets a message, it displays it on the console.</p>
+</li>
+<li class="listitem">
+<p>Stop <code class="code">server3</code>. Do you encounter any
+error message?</p>
+</li>
+<li class="listitem">
+<p>Start <code class="code">server3</code>. Does the consumer start
+consuming messages again?</p>
+<p>The answer is no. Imagine if it is a real-world application, and
+you need to restart the whole application to consume messages
+again. You need to make the consumer
+&ldquo;shutdown-aware&rdquo;.</p>
+</li>
+<li class="listitem">
+<p>Modify the <code class="code">createConnection()</code> method
+in <code class="code">HaQuotationConsumer</code> class to add a
+ShutdownListener on the newly-created connection. You need to check
+if the shutdown was explicit, or because of any error. Call the
+<code class="code">connectAndListen()</code> method inside the
+<code class="code">shutdownCompleted()</code> method of the
+listener in case of a hard error.</p>
+</li>
+<li class="listitem">
+<p>Make sure the old version of the <code class="code">HaQuotationConsumer</code> class isn&rsquo;t running
+anymore, and start the changed version.</p>
+</li>
+<li class="listitem">
+<p>Stop <code class="code">server3</code>. You see the consumer
+connecting to another node and consuming messages.</p>
+</li>
+</ol>
+</div>
+<p>The consumer survives the death of its node. The trick was to
+add the shutdown listener to reconnect automatically. Note that the
+reconnection code tries to reconnect randomly. This wouldn&rsquo;t
+be necessary if you were using a load balancer.</p>
+<p>Let&rsquo;s see now another failure scenario: the death of the
+owner of the queue.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="high-availability-lab-resources-owner-node-failure" name="high-availability-lab-resources-owner-node-failure" shape="rect"></a>7.6.3.&nbsp;Failure
+of the Queue Owner Node</h3>
+</div>
+</div>
+</div>
+<p>The failure scenario:</p>
+<p>A consumer consumes messages from a queue. The node that the
+consumer is connected to does not own the queue. What happens if
+the node that owns the queue crashes?</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Make sure all the nodes of the cluster are running, messages are
+sent to the <code class="code">market.us</code> queue, and <code class="code">HaQuotationConsumer</code> is consuming from <code class="code">server3</code> (it&rsquo;s the case by default, at
+least on the first connection).</p>
+</li>
+<li class="listitem">
+<p>Stop <code class="code">server2</code>. Remember that stopping
+the owner of a non-mirrored queue makes the queue disappear from
+the cluster. This means messages routed to the queue are discarded,
+but what about consumers?</p>
+<p>You should see <code class="code">HaQuotationConsumer</code>
+doesn&rsquo;t receive messages any more. It&rsquo;s actually trying
+to consume from a queue that doesn&rsquo;t exist. Do you encounter
+any error messages? What happens if you restart <code class="code">server2</code>?</p>
+</li>
+<li class="listitem">
+<p>Restart <code class="code">server2</code>.</p>
+</li>
+<li class="listitem">
+<p>Check with the management plugin that messages are enqueued on
+<code class="code">market.us</code>.</p>
+</li>
+<li class="listitem">
+<p>Check on the console if <code class="code">HaQuotationConsumer</code> receives messages.</p>
+</li>
+</ol>
+</div>
+<p>You might think <code class="code">HaQuotationConsumer</code>
+would start receiving messages again as soon as <code class="code">server2</code> (the owner of the queue) restarts.
+After all, nothing wrong has happened to the node <code class="code">HaQuotationConsumer</code> is connected to (<code class="code">server3</code>). This isn&rsquo;t the case, it&rsquo;s
+like <code class="code">HaQuotationConsumer</code> is consuming
+from a phantom queue. Fortunately, RabbitMQ provides an extension
+when consumers want to be notified that the owner of the queue
+they&rsquo;re consuming has failed.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Modify the consumer in the <code class="code">connectAndListen()</code> method to use the consumer
+cancellation extension (<code class="code">handleCancel()</code>
+method). You just have to call the <code class="code">connectAndListen()</code> method in the callback.</p>
+</li>
+<li class="listitem">
+<p>Stop the <code class="code">HaQuotationConsumer</code> if
+it&rsquo;s still running, and restart it.</p>
+</li>
+<li class="listitem">
+<p>Check whether the messages are consumed.</p>
+</li>
+<li class="listitem">
+<p>Stop <code class="code">server2</code>. You see <code class="code">HaQuotationConsumer</code> issuing error messages. It
+manages to reconnect to another node, but gets an error when trying
+to consume from <code class="code">market.us</code> queue. Remember
+the queue doesn&rsquo;t exist anymore because its owner node is
+down.</p>
+</li>
+<li class="listitem">
+<p>Restart <code class="code">server2</code>. <code class="code">HaQuotationConsumer</code> restarts consuming
+messages.</p>
+</li>
+</ol>
+</div>
+<p>If you&rsquo;re using the <code class="code">HaQuotationSender</code> from the <code class="code">ha-solution</code> project, you can even try to stop
+<code class="code">server1</code>. You can shut down any node and
+restart it. Both <code class="code">HaQuotationSender</code> and
+<code class="code">HaQuotationConsumer</code> will be able to
+reconnect and consume messages.</p>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="high-availability-lab-auto-recovery" name="high-availability-lab-auto-recovery" shape="rect"></a>7.7.&nbsp;Automatic
+recovery with the Java client (Optional)</h2>
+</div>
+</div>
+</div>
+<p>This section is optional, it covers the automatic recovery
+feature of the RabbitMQ Java client. Don't hesitate to work on this
+section if you plan to use the Java client.</p>
+<p>You've just seen how to make Rabbit clients applications more
+resilient to failures. Unfortunately, this can be a little tricky.
+The good news is the Java client has an automatic recovery feature:
+it can reconnect and re-register listeners after a failure. This is
+exactly what we're going to test in this section. Remember this is
+a special feature of the official Java client: not all Rabbit
+clients - especially the community-driven ones - implement
+automatic recovery.</p>
+<p>Here are the pre-requisites for this section:</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>A 3-node RabbitMQ cluster</p>
+</li>
+<li class="listitem">
+<p>A <code class="code">market.us</code> <span class="emphasis"><em>mirrored</em></span> queue, bound to a <code class="code">quotations</code> exchange. The owner of the queue is
+<code class="code">server2</code>.</p>
+</li>
+</ol>
+</div>
+<p>Here is the scenario we're about to test: a sender program sends
+a message every second, a consumer program consumes those messages,
+and the node the client is connected to fails. As the automatic
+recovery is enabled on the consumer, we'll see it automatically
+handles the recovery (reconnection and re-registration of
+listeners.) Let's start!</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Stop any program running.</p>
+</li>
+<li class="listitem">
+<p>In <code class="code">HaQuotationConsumer</code>, enable the
+automatic recovery flag (at the <code class="code">ConnectionFactory</code> level) and use an array of
+<code class="code">Addresses</code> to create the connection (note
+this array is already defined in an <code class="code">ADDRESSES</code> static property.) The <code class="code">createConnection</code> method should look like the
+following:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">// defined at the top of the class, don't declare it again                              
+private static final Address [] ADDRESSES = new Address[] {
+        new Address("localhost",5672),
+        new Address("localhost",5673),
+        new Address("localhost",5674)
+};
+                                
+private static Connection createConnection(int port) throws Exception {
+  ConnectionFactory factory = new ConnectionFactory();
+  factory.setUsername("guest");
+  factory.setPassword("guest");
+  factory.setVirtualHost("/");
+                
+  factory.setAutomaticRecoveryEnabled(true);            
+  Connection conn = factory.newConnection(ADDRESSES);
+  return conn;
+}                               
+</pre>
+</li>
+<li class="listitem">
+<p>If you did the other parts of the lab, be careful to remove (or
+comment out) the listener you added to the connection: it was there
+to handle a reconnection and is now useless, as the reconnection
+will be handled by the Java client itself. Don't forget to also
+remove the reconnection code in the consumer cancellation method.
+Remember, this code is in the <code class="code">basicConsume</code> method. The listener could now be
+like this:</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">channel.basicConsume("market.us", true,new DefaultConsumer(channel) {
+    @Override
+    public void handleDelivery(String consumerTag, Envelope envelope,
+             BasicProperties properties, byte[] body) throws IOException {
+      System.out.println("receiving quotation: "+new String(body));                             
+    }
+        
+    @Override
+    public void handleCancel(String consumerTag) throws IOException {
+      // NO OP
+    }
+        
+});
+                          
+</pre>
+</li>
+<li class="listitem">
+<p>Launch the <code class="code">HaQuotationSender</code> of the
+<code class="code">ha-solution</code> project. It connects to the
+cluster, and sends messages to the <code class="code">quotations</code> exchange. It handles
+reconnection.</p>
+</li>
+<li class="listitem">
+<p>Check the messages are routed to the queue.</p>
+</li>
+<li class="listitem">
+<p>Starts the <code class="code">HaQuotationConsumer</code> you
+modified and ensure the message appears in the console.</p>
+</li>
+<li class="listitem">
+<p>Thanks to the "Connections" tab in the web UI, find the node the
+consumer is connected is (it's likely to be <code class="code">server1</code>.) Stop this node. What happens to the
+listener? It should stop for a few seconds and restart listening
+again, all by itself!</p>
+</li>
+</ol>
+</div>
+<p>What happened exactly? This is bad scenario: the node the client
+is connected to has died. In the other sections of the lab, we had
+to handle the reconnection and re-registration manually, thanks to
+the shutdown notification RabbitMQ sends. This works, but is a
+little cumbersome.</p>
+<p>With automatic recovery enabled, the Java client handles the
+reconnection and the re-registration by itself. Note we had to
+specify the location of the nodes (with the array of <code class="code">Address</code>es.) Remember automatic recovery is
+specific to the Java client. If you don't use this client, check
+the documentation of your client to see if it implements a similar
+feature.</p>
+<p>After this lab, you should have learned that failures of nodes
+aren&rsquo;t transparent to clients, and may need to be handled
+explicitly. You used low-level APIs here, but remember some
+higher-level abstraction like Spring AMQP can make this failover
+handling more transparent.</p>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table summary="Navigation footer" width="100%">
+<tr>
+<td align="left" colspan="1" rowspan="1" width="40%"><a accesskey="p" href="clustering-lab.html" shape="rect">Prev</a>&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><a accesskey="h" href="index.html" shape="rect">Home</a></td>
+<td align="right" colspan="1" rowspan="1" width="40%">&nbsp;<a accesskey="n" href="performance-lab.html" shape="rect">Next</a></td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top" width="40%">
+Chapter&nbsp;6.&nbsp;Clustering&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><span style="color:white;font-size:90%;"><a href="http://www.pivotal.io/oss" shape="rect" title="RabbitMQ">RabbitMQ By
+Pivotal</a></span></td>
+<td align="right" colspan="1" rowspan="1" valign="top" width="40%">
+&nbsp;Chapter&nbsp;8.&nbsp;Performance</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

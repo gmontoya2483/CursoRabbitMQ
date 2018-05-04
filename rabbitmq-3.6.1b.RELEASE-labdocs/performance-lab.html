@@ -1,0 +1,246 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="HTML Tidy for Java (vers. 2009-12-01), see jtidy.sourceforge.net" name="generator">
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<title>Chapter&nbsp;8.&nbsp;Performance</title>
+<link href="css/html.css" rel="stylesheet" type="text/css">
+<meta content="DocBook XSL Stylesheets V1.79.1" name="generator">
+<link href="index.html" rel="home" title="RabbitMQ - Lab Documentation">
+<link href="index.html" rel="up" title="RabbitMQ - Lab Documentation">
+<link href="high-availability-lab.html" rel="prev" title="Chapter&nbsp;7.&nbsp;High Availability">
+<link href="securing-rabbitmq-lab.html" rel="next" title="Chapter&nbsp;9.&nbsp;Securing RabbitMQ">
+
+<link href="css/highlight.css" rel="stylesheet" type="text/css"></head>
+<body alink="#0000FF" bgcolor="white" link="#0000FF" text="black" vlink="#840084">
+<div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:none;"><a href="http://www.rabbitmq.com/" shape="rect" style="border:none;" title="RabbitMQ"><img src="images/rabbitmq_logo_strap.png" style="border:none;"></a><a href="http://www.pivotal.io/" shape="rect" style="border:none;" title="RabbitMQ by Pivotal"><img src="images/logo-pivotal-118x25.png" style="border:none;position:absolute;padding-top:5px;right:42px;"></a></div>
+<div class="chapter">
+<div class="titlepage">
+<div>
+<div>
+<h1 class="title"><a id="performance-lab" name="performance-lab" shape="rect"></a>Chapter&nbsp;8.&nbsp;Performance</h1>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="performance-lab-comparing-classic-configs" name="performance-lab-comparing-classic-configs" shape="rect"></a>8.1.&nbsp;Comparing
+and Benchmarking Classic Configurations</h2>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="performance-lab-classic-config-objective" name="performance-lab-classic-config-objective" shape="rect"></a>8.1.1.&nbsp;Objective</h3>
+</div>
+</div>
+</div>
+<p>In this lab, you will see how different factors and
+configurations impact performance of the broker.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="performance-lab-message-size" name="performance-lab-message-size" shape="rect"></a>8.1.2.&nbsp;Experiencing
+Message Size</h3>
+</div>
+</div>
+</div>
+<p>This first part will show you how the message size impacts
+performances.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Open the <code class="code">BigQuotationSender</code> class.</p>
+</li>
+<li class="listitem">
+<p>Complete the TODO tags and uncomment the line.</p>
+</li>
+<li class="listitem">
+<p>Run the Java program, and observe the time increasing.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="performance-lab-delivery-mode" name="performance-lab-delivery-mode" shape="rect"></a>8.1.3.&nbsp;Experiencing
+the Delivery Mode and Persistence</h3>
+</div>
+</div>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Open the <code class="code">DeliveryModeSender</code> class.</p>
+</li>
+<li class="listitem">
+<p>Complete the TODO tags.</p>
+</li>
+<li class="listitem">
+<p>Run the Java program, and observe the delta between the 2
+different times.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="performance-lab-acknowledgements" name="performance-lab-acknowledgements" shape="rect"></a>8.1.4.&nbsp;Experiencing
+the Acknowledgements Mechanism</h3>
+</div>
+</div>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Open the <code class="code">AcknowledgementBencher</code>
+class.</p>
+</li>
+<li class="listitem">
+<p>Complete the TODO tags.</p>
+</li>
+<li class="listitem">
+<p>Run the Java program, and observe the delta between the 2
+different times.</p>
+</li>
+</ol>
+</div>
+<p>Congrats! You&rsquo;re done with this lab. You've learned how
+client parameters can affect performance.</p>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h2 class="title" style="clear: both"><a id="performance-lab-flow-control" name="performance-lab-flow-control" shape="rect"></a>8.2.&nbsp;Preventing
+RabbitMQ from Accepting too much Traffic</h2>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="performance-lab-flow-control-objective" name="performance-lab-flow-control-objective" shape="rect"></a>8.2.1.&nbsp;Objective</h3>
+</div>
+</div>
+</div>
+<p>In this lab, you will learn how you can prevent the RabbitMQ
+broker from accepting too much traffic from clients.</p>
+<p>By the end of the lab, you&rsquo;ll know how to configure the
+broker efficiently.</p>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="performance-lab-high-mem-watermark" name="performance-lab-high-mem-watermark" shape="rect"></a>8.2.2.&nbsp;Configuring
+the High Memory Watermark</h3>
+</div>
+</div>
+</div>
+<p>By default, RabbitMQ is configured to raise an alarm and turn on
+the flow controller when the used memory is above 40% of the total
+installed RAM. In order to speed-up the saturation process, you
+will decrease this value to 20%.</p>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Stop the RabbitMQ broker.</p>
+</li>
+<li class="listitem">
+<p>Replace the content of the configuration file by the following
+(remember, the configuration file is <code class="code">/etc/rabbitmq/rabbitmq.config</code> on UNIX-like
+systems, and <code class="code">%APPDATA%\RabbitMQ\rabbitmq.config</code> on Windows
+systems)</p>
+<pre class="programlisting" style="width:100%;" xml:space="preserve">[
+{rabbit, [{vm_memory_high_watermark, 0.2}]}
+].
+</pre>
+</li>
+<li class="listitem">
+<p>Restart the broker.</p>
+</li>
+<li class="listitem">
+<p>Run the <code class="code">rabbitmqctl status</code> command to
+be sure your new parameter has been loaded correctly.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="section">
+<div class="titlepage">
+<div>
+<div>
+<h3 class="title"><a id="performance-lab-flow-controller" name="performance-lab-flow-controller" shape="rect"></a>8.2.3.&nbsp;Experiencing
+the Flow Controller</h3>
+</div>
+</div>
+</div>
+<div class="orderedlist">
+<ol class="orderedlist compact" type="1">
+<li class="listitem">
+<p>Open the <code class="code">BrokerFlooder</code> class.</p>
+</li>
+<li class="listitem">
+<p>Write the Java code to send messages in an infinite loop.</p>
+</li>
+<li class="listitem">
+<p>Then modify the Java code to print on the console the time
+elapsed between 10,000 messages sent (it prints the time every
+message presently).</p>
+</li>
+<li class="listitem">
+<p>Open a terminal, and go to your <code class="code">$RABBITMQ_HOME/log</code>.</p>
+</li>
+<li class="listitem">
+<p>Open your main log file (<code class="code">rabbit@&lt;node_name&gt;.log</code>), and check it
+regularly.</p>
+</li>
+<li class="listitem">
+<p>Run the Java program, and observe the time that is required to
+send 10.000 messages to the broker. Look at the same time in the
+log file. The broker issues a warning in the log when it reaches
+the memory high watermark. The publisher is then blocked.</p>
+</li>
+</ol>
+</div>
+<p>Note getting the warning can be difficult, as queues can swap
+out their content to disc when under pressure. If you don&rsquo;t
+get the warning, stop the broker and try to lower the memory
+watermark (e.g. 0.1 or even 0.05).</p>
+<p>Congrats! You&rsquo;re done with this lab, and you have learned
+how to prevent your RabbitMQ from flooders.</p>
+</div>
+</div>
+</div>
+<div class="navfooter">
+<hr>
+<table summary="Navigation footer" width="100%">
+<tr>
+<td align="left" colspan="1" rowspan="1" width="40%"><a accesskey="p" href="high-availability-lab.html" shape="rect">Prev</a>&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><a accesskey="h" href="index.html" shape="rect">Home</a></td>
+<td align="right" colspan="1" rowspan="1" width="40%">&nbsp;<a accesskey="n" href="securing-rabbitmq-lab.html" shape="rect">Next</a></td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1" valign="top" width="40%">Chapter&nbsp;7.&nbsp;High
+Availability&nbsp;</td>
+<td align="center" colspan="1" rowspan="1" width="20%"><span style="color:white;font-size:90%;"><a href="http://www.pivotal.io/oss" shape="rect" title="RabbitMQ">RabbitMQ By
+Pivotal</a></span></td>
+<td align="right" colspan="1" rowspan="1" valign="top" width="40%">
+&nbsp;Chapter&nbsp;9.&nbsp;Securing RabbitMQ</td>
+</tr>
+</table>
+</div>
+</body>
+</html>
